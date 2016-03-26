@@ -63,10 +63,10 @@
         $LocalPath
     )
 
-<#    if ((Get-PSSnapin Microsoft.TeamFoundation.PowerShell -ErrorAction SilentlyContinue) -eq $null) 
+    if ((Get-PSSnapin Microsoft.TeamFoundation.PowerShell -ErrorAction SilentlyContinue) -eq $null) 
     {
-        Add-PSSnapin -Name Microsoft.TeamFoundation.PowerShell
-    }#>
+        Add-PSSnapin Microsoft.TeamFoundation.PowerShell
+    }
    
     if (-not (Test-Path $LocalPath))
     {

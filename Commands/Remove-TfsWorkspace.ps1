@@ -51,10 +51,10 @@
         $WorkspaceName
     )
     
-<#    if ((Get-PSSnapin Microsoft.TeamFoundation.PowerShell -ErrorAction SilentlyContinue) -eq $null) 
+    if ((Get-PSSnapin Microsoft.TeamFoundation.PowerShell -ErrorAction SilentlyContinue) -eq $null) 
     {
         Add-PSSnapin Microsoft.TeamFoundation.PowerShell
-    }#>
+    }
 
   
     Write-Verbose "Login to TFS $Server"

@@ -6,7 +6,7 @@
     CompanyName = 'Cidney'
     Copyright = '(c) 2016 Cidney Team'
     Description = 'This module contains Commands that are used with Cidney for source code, build and deployment'
-    FunctionsToExport = 'Get-TfsSource', 'Invoke-NugetRestore','Build'
+    FunctionsToExport = 'Get-TfsSource', 'Invoke-NugetRestore','New-TfsWorkspace','Remove-TfsWorkspace'
     PrivateData = ''
 }
 
