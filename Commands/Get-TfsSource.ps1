@@ -77,9 +77,9 @@
         [parameter(Mandatory)]
         [string]
         $Name,
-        [parameter(Mandatory)]
+<#        [parameter(Mandatory)]
         [pscredential]
-        $Credential,
+        $Credential,#>
         [parameter(Mandatory)]
         [string]
         $WorkspaceName,
@@ -88,40 +88,47 @@
         $Path,
         [parameter(Mandatory)]
         [string]
-        $LocalPath,
-        [string]
-        $VersionSpec = 'T',
-        [switch]
-        $Force
+        $LocalPath    
     )
 
-    if ((Get-PSSnapin Microsoft.TeamFoundation.PowerShell -ErrorAction SilentlyContinue) -eq $null) 
-    {
-        Add-PSSnapin Microsoft.TeamFoundation.PowerShell
-    }
+    #if ((Get-PSSnapin Microsoft.TeamFoundation.Powershell -ErrorAction SilentlyContinue) -eq $null)
+    #{
+       # Add-PSSnapin Microsoft.TeamFoundation.Powershell -ErrorAction SilentlyContinue
+    #}
+
+    Import-Module "${env:ProgramFiles(x86)}\Microsoft Team Foundation Server 2015 Power Tools\Microsoft.TeamFoundation.PowerTools.PowerShell.dll"
 
     if (-not (Test-Path $LocalPath))
     {
-        $null = 
-        New-Item -Path $LocalPath -ItemType Directory
+        $null = New-Item -Path $LocalPath -ItemType Directory
     }
 
-    $server = Get-TfsServer -Name $Name -Credential $Credential
-    $workspace = New-TfsWorkspace -Name $Name -Credential $Credential -WorkspaceName $WorkspaceName -Path $Path -LocalPath $LocalPath 
+    $clientDll = 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Microsoft.TeamFoundation.Client.dll'
+    $versionControlClientDll = 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Microsoft.TeamFoundation.VersionControl.Client.dll'
+    $versionControlCommonDll = 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Microsoft.TeamFoundation.VersionControl.Common.dll'
+    
+    # Load TFS Assemblies
+    $null = [Reflection.Assembly]::LoadFrom($clientDll)
+    $null = [Reflection.Assembly]::LoadFrom($versionControlClientDll)
+    $null = [Reflection.Assembly]::LoadFrom($versionControlCommonDll)
+ 
+    # Set up connection to TFS Server and get version control service
+    $tfs = [Microsoft.TeamFoundation.Client.TeamFoundationServerFactory]::GetServer($tfsServer)
+    $server = [Microsoft.TeamFoundation.VersionControl.Client.VersionControlServer]
+    $versionControl = $tfs.GetService($server)
 
-    Write-Output "Downloading source to $LocalPath"
-    $Date = Get-date
-
-    if ($PSBoundParameters.ContainsKey('Debug'))
+    # Create a workspace and map a local Path to a TFS Path
+    try 
     {
-        Update-TfsWorkspace -Item $LocalPath -Version $VersionSpec -Recurse -All -Force:$Force
-    }
-    else
-    {
-        $null = Update-TfsWorkspace -Item $LocalPath -Version $VersionSpec -Recurse -All -Force:$Force
-    }
+        $workspace = $versionControl.CreateWorkspace($WorkspaceName)
+        $workingfolder = [Microsoft.TeamFoundation.VersionControl.Client.WorkingFolder]::new($Path, $LocalPath)
+        $workspace.CreateMapping($workingFolder)
 
-    $time = New-TimeSpan -Start $Date -End (Get-Date)
-    Write-Verbose "Done getting source from $Path in $($time.TotalSeconds) seconds"
+        Update-TfsWorkspace -Item $LocalPath -Version 'T' -Recurse -All 
+    }
+    finally
+    {
+        $versionControl.DeleteWorkspace($WorkspaceName, $versionControl.AuthorizedIdentity.UniqueName)
+    }
 }
                 
